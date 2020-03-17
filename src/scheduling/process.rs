@@ -5,6 +5,8 @@ use crate::scheduling::statement::Statement;
 use super::job::Job;
 use super::TICK;
 
+pub type PId = usize;
+
 #[derive(Debug, Copy, Clone)]
 pub struct RunningStatement {
     index: usize,
@@ -18,11 +20,17 @@ impl RunningStatement {
             elapsed_time: 0,
         }
     }
+    pub fn elapsed(self, elapsed_duration: usize) -> Self {
+        Self {
+            index: self.index,
+            elapsed_time: self.elapsed_time + elapsed_duration,
+        }
+    }
 }
 
 #[derive(Debug, Clone)]
 pub struct Process {
-    id: usize,
+    id: PId,
     job: Arc<Job>,
     arrival_time: usize,
     completion_time: usize,
@@ -45,30 +53,42 @@ impl Process {
         self.completion_time = completion_time;
         self.running_statement.take();
     }
-    pub fn burst(&mut self, clock: usize) {
+    /// returns: new running statement
+    pub fn burst(&mut self, clock: usize) -> Option<Statement> {
         if self.is_completed() {
-            return;
+            return None;
         }
-        let next_statement_index = if let Some(running_statement) = self.running_statement.as_mut()
-        {
-            let elapsed_time = running_statement.elapsed_time;
-            let running_statement_duration =
-                self.job.statements[running_statement.index].duration();
-            if elapsed_time + TICK > running_statement_duration {
-                Some(running_statement.index + 1)
-            } else {
-                running_statement.elapsed_time += TICK;
-                None
-            }
-        } else {
-            Some(0)
-        };
-        next_statement_index
-            .filter(|&index| self.statements().get(index).is_some())
-            .map(|index| {
-                self.running_statement = Some(RunningStatement::new(index));
+        let (running_statement, statement_if_new) = self
+            .running_statement
+            .take()
+            .map(|running_statement| {
+                let elapsed_time = running_statement.elapsed_time;
+                let running_statement_duration =
+                    self.job.statements[running_statement.index].duration();
+                if elapsed_time + TICK > running_statement_duration {
+                    let next_statement_index = running_statement.index + 1;
+                    let next_statement = self
+                        .statements()
+                        .get(next_statement_index)
+                        .map(|_| RunningStatement::new(next_statement_index));
+                    (next_statement, next_statement)
+                } else {
+                    (Some(running_statement.elapsed(TICK)), None)
+                }
             })
-            .unwrap_or_else(|| self.complete(clock));
+            .unwrap_or_else(|| {
+                if self.statements().is_empty() {
+                    (None, None)
+                } else {
+                    let next_statement = Some(RunningStatement::new(0));
+                    (next_statement, next_statement)
+                }
+            });
+        if running_statement.is_none() {
+            self.complete(clock);
+        }
+        self.running_statement = running_statement;
+        statement_if_new.map(|s| self.statements()[s.index])
     }
 }
 
