@@ -223,7 +223,6 @@ pub mod limited_readers {
     use std::cell::UnsafeCell;
     use std::ops::{Deref, DerefMut};
     use std::sync::{
-        atomic::{AtomicUsize, Ordering},
         Mutex, MutexGuard,
     };
 
