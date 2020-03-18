@@ -16,11 +16,14 @@ pub trait Scheduler {
     }
     fn burst_process(&mut self, os: &mut Os) {
         let clock = os.clock;
-        if let Some(process) = os.running_process() {
-            if let Some(new_statement) = process.burst(clock) {
+        if let Some((new_statement, is_completed, pid)) = os
+            .running_process()
+            .map(|process| (process.burst(clock), process.is_completed(), process.id))
+        {
+            if let Some(new_statement) = new_statement {
                 self.run_statement(os, new_statement);
-            } else if process.is_completed() {
-                os.complete_process(process.id);
+            } else if is_completed {
+                os.complete_process(pid);
                 self.switch_process(os);
             }
         }
@@ -34,9 +37,11 @@ pub trait Scheduler {
     fn run_cpu_bound_statement(&mut self, os: &mut Os, duration: u64) {}
     fn run_io_bound_statement(&mut self, os: &mut Os, duration: u64) {
         let clock = os.clock;
-        if let Some(process) = os.running_process() {
+        if let Some(pid) = os.running_process().map(|process| {
             process.bump_to_next(clock);
-            os.await_process(process.id, duration);
+            process.id
+        }) {
+            os.await_process(pid, duration)
         }
         self.switch_process(os);
     }
