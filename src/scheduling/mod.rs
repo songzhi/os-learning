@@ -4,4 +4,4 @@ pub mod process;
 pub mod scheduler;
 pub mod statement;
 
-const TICK: usize = 10;
+const TICK: u64 = 10;

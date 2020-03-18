@@ -10,7 +10,7 @@ pub type PId = usize;
 #[derive(Debug, Copy, Clone)]
 pub struct RunningStatement {
     index: usize,
-    elapsed_time: usize,
+    elapsed_time: u64,
 }
 
 impl RunningStatement {
@@ -20,7 +20,7 @@ impl RunningStatement {
             elapsed_time: 0,
         }
     }
-    pub fn elapsed(self, elapsed_duration: usize) -> Self {
+    pub fn elapsed(self, elapsed_duration: u64) -> Self {
         Self {
             index: self.index,
             elapsed_time: self.elapsed_time + elapsed_duration,
@@ -30,16 +30,16 @@ impl RunningStatement {
 
 #[derive(Debug, Clone)]
 pub struct Process {
-    id: PId,
+    pub id: PId,
     job: Arc<Job>,
-    arrival_time: usize,
-    completion_time: usize,
-    burst_time: usize,
+    arrival_time: u64,
+    completion_time: u64,
+    burst_time: u64,
     running_statement: Option<RunningStatement>,
 }
 
 impl Process {
-    pub fn new(id: usize, job: Arc<Job>, arrival_time: usize) -> Self {
+    pub fn new(id: usize, job: Arc<Job>, arrival_time: u64) -> Self {
         Self {
             id,
             job,
@@ -49,12 +49,12 @@ impl Process {
             running_statement: None,
         }
     }
-    pub fn complete(&mut self, completion_time: usize) {
+    pub fn complete(&mut self, completion_time: u64) {
         self.completion_time = completion_time;
         self.running_statement.take();
     }
     /// returns: new running statement
-    pub fn burst(&mut self, clock: usize) -> Option<Statement> {
+    pub fn burst(&mut self, clock: u64) -> Option<Statement> {
         if self.is_completed() {
             return None;
         }
@@ -87,46 +87,56 @@ impl Process {
         if running_statement.is_none() {
             self.complete(clock);
         }
+        self.burst_time += TICK;
         self.running_statement = running_statement;
         statement_if_new.map(|s| self.statements()[s.index])
+    }
+    /// bump to next statement without incrementing burst time
+    pub fn bump_to_next(&mut self, clock: u64) -> Option<Statement> {
+        let next_statement_index = self.running_statement.map(|s| s.index + 1).unwrap_or(0);
+        let next_statement = self.statements().get(next_statement_index).copied();
+        if next_statement.is_none() {
+            self.complete(clock);
+        }
+        next_statement
     }
 }
 
 impl Process {
     pub fn is_not_started(&self) -> bool {
-        self.completion_time - self.arrival_time == 0
+        self.completion_time == self.arrival_time
     }
     pub fn is_running(&self) -> bool {
         self.running_statement.is_some()
     }
     pub fn is_completed(&self) -> bool {
-        self.completion_time - self.arrival_time != 0
+        self.completion_time != self.arrival_time
     }
     pub fn is_io_bound(&self) -> bool {
         self.job.is_io_bound
     }
     /// Time at which the process arrives in the ready queue.
-    pub fn arrival_time(&self) -> usize {
+    pub fn arrival_time(&self) -> u64 {
         self.arrival_time
     }
     /// Time at which process completes its execution.
-    pub fn completion_time(&self) -> usize {
+    pub fn completion_time(&self) -> u64 {
         self.completion_time
     }
     /// Time required by a process for CPU execution.
-    pub fn burst_time(&self) -> usize {
+    pub fn burst_time(&self) -> u64 {
         self.burst_time
     }
     /// Time Difference between completion time and arrival time.
-    pub fn turn_around_time(&self) -> usize {
+    pub fn turn_around_time(&self) -> u64 {
         self.completion_time - self.arrival_time
     }
     /// turn around time divides burst time
-    pub fn weighted_turn_around_time(&self) -> usize {
+    pub fn weighted_turn_around_time(&self) -> u64 {
         self.turn_around_time() / self.burst_time
     }
     /// Time Difference between turn around time and burst time.
-    pub fn waiting_time(&self) -> usize {
+    pub fn waiting_time(&self) -> u64 {
         self.turn_around_time() - self.burst_time
     }
     pub fn statements(&self) -> &Vec<Statement> {
