@@ -16,6 +16,7 @@ pub struct Os {
     running_process_pid: Option<PId>,
     scheduler: Rc<RefCell<dyn Scheduler>>,
     completed_process_count: usize,
+    context_switch_times: usize,
 }
 
 impl Os {
@@ -24,7 +25,9 @@ impl Os {
             .with_tick_duration(Duration::from_millis(10))
             .build();
         for p in processes.values() {
-            waiting.insert_timeout(Duration::from_millis(p.arrival_time()), p.id);
+            waiting
+                .insert_timeout(Duration::from_millis(p.arrival_time()), p.id)
+                .expect("timer error");
         }
         Self {
             clock: 0,
@@ -33,6 +36,7 @@ impl Os {
             running_process_pid: None,
             scheduler,
             completed_process_count: 0,
+            context_switch_times: 0,
         }
     }
     pub fn run(&mut self) {
@@ -59,13 +63,72 @@ impl Os {
         self.processes.get_mut(&pid)
     }
     pub fn await_process(&mut self, pid: PId, timeout: u64) {
+        log::trace!(
+            "Clock[{}]: Await Process[{}] with Timeout[{}]",
+            self.clock,
+            pid,
+            timeout
+        );
         self.waiting
-            .insert_timeout(Duration::from_millis(timeout), pid);
+            .insert_timeout(Duration::from_millis(timeout), pid)
+            .expect("timer error");
     }
-    pub fn complete_process(&mut self, pid: PId) {
+    pub fn complete_process(&mut self, _pid: PId) {
         self.completed_process_count += 1;
     }
     pub fn is_completed(&self) -> bool {
         self.completed_process_count == self.processes.len()
+    }
+    pub fn switch_process(&mut self, pid: Option<PId>) {
+        if let Some(pid) = pid {
+            log::trace!("Clock[{}]: Switch to Process[{}]", self.clock, pid);
+            self.context_switch_times += 1;
+        } else {
+            log::trace!("Clock[{}]: Idle", self.clock);
+        }
+        self.running_process_pid = pid;
+    }
+    pub fn raw_process_stats(&self) -> prettytable::Table {
+        let mut table = prettytable::Table::new();
+        table.add_row(Process::table_header());
+        for p in self.processes.values() {
+            table.add_row(p.table_row());
+        }
+        table
+    }
+    pub fn totalled_process_stats(&self) -> prettytable::Table {
+        let mut waiting_time_sum = 0;
+        let mut turn_around_time_sum = 0;
+        let mut weighted_turn_around_time_sum = 0;
+        let mut burst_time_sum = 0;
+        for p in self.processes.values() {
+            waiting_time_sum += p.waiting_time();
+            turn_around_time_sum += p.turn_around_time();
+            weighted_turn_around_time_sum += p.weighted_turn_around_time();
+            burst_time_sum += p.burst_time();
+        }
+        let process_count = self.processes.len() as u64;
+        let average_waiting_time = waiting_time_sum / process_count;
+        let average_turn_around_time = turn_around_time_sum / process_count;
+        let average_weighted_turn_around_time = weighted_turn_around_time_sum / process_count;
+        let cpu_usage = burst_time_sum * 100 / self.clock;
+        table!(
+            [
+                Fg =>
+                "Ave Waiting",
+                "Ave Turn Around",
+                "Ave Weighted Turn Around",
+                "CPU Usage",
+            ],
+            [
+                average_waiting_time,
+                average_turn_around_time,
+                average_weighted_turn_around_time,
+                format!("{}%", cpu_usage)
+            ]
+        )
+    }
+    pub fn desc(&self) -> String {
+        format!("Scheduler: {}", self.scheduler.borrow().desc())
     }
 }

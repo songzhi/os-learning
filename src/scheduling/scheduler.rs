@@ -4,12 +4,15 @@ use super::os::Os;
 use super::process::PId;
 use super::statement::Statement;
 
+pub mod fcfs;
+
 pub trait Scheduler {
     fn on_process_ready(&mut self, os: &mut Os, pid: PId);
     fn switch_process(&mut self, os: &mut Os);
-
+    fn desc(&self) -> &'static str;
     fn on_tick(&mut self, os: &mut Os) {
         while let Some(pid) = os.waiting.expired_timeout() {
+            log::trace!("Clock[{}]: Process[{}] Ready", os.clock, pid);
             self.on_process_ready(os, pid);
         }
         self.burst_process(os);
@@ -21,11 +24,20 @@ pub trait Scheduler {
             .map(|process| (process.burst(clock), process.is_completed(), process.id))
         {
             if let Some(new_statement) = new_statement {
+                log::trace!(
+                    "Clock[{}]: New Statement::{:?} in Process[{}]",
+                    clock,
+                    new_statement,
+                    pid
+                );
                 self.run_statement(os, new_statement);
             } else if is_completed {
+                log::trace!("Clock[{}]: Process[{}] Completed", clock, pid);
                 os.complete_process(pid);
                 self.switch_process(os);
             }
+        } else {
+            self.switch_process(os);
         }
     }
     fn run_statement(&mut self, os: &mut Os, statement: Statement) {
@@ -34,11 +46,18 @@ pub trait Scheduler {
             Statement::IoBound(duration) => self.run_io_bound_statement(os, duration),
         }
     }
-    fn run_cpu_bound_statement(&mut self, os: &mut Os, duration: u64) {}
+    fn run_cpu_bound_statement(&mut self, _os: &mut Os, _duration: u64) {}
     fn run_io_bound_statement(&mut self, os: &mut Os, duration: u64) {
         let clock = os.clock;
         if let Some(pid) = os.running_process().map(|process| {
-            process.bump_to_next(clock);
+            if let Some(next_statement) = process.bump_to_next(clock) {
+                log::trace!(
+                    "Clock[{}]: Process[{}] Bump to Next Statement::{:?}",
+                    clock,
+                    process.id,
+                    next_statement
+                );
+            }
             process.id
         }) {
             os.await_process(pid, duration)

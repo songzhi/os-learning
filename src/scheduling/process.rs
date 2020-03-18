@@ -50,7 +50,7 @@ impl Process {
         }
     }
     pub fn complete(&mut self, completion_time: u64) {
-        self.completion_time = completion_time;
+        self.completion_time = completion_time - TICK; // error-fixing
         self.running_statement.take();
     }
     /// returns: new running statement
@@ -65,7 +65,7 @@ impl Process {
                 let elapsed_time = running_statement.elapsed_time;
                 let running_statement_duration =
                     self.job.statements[running_statement.index].duration();
-                if elapsed_time + TICK > running_statement_duration {
+                if elapsed_time + TICK >= running_statement_duration {
                     let next_statement_index = running_statement.index + 1;
                     let next_statement = self
                         .statements()
@@ -93,10 +93,17 @@ impl Process {
     }
     /// bump to next statement without incrementing burst time
     pub fn bump_to_next(&mut self, clock: u64) -> Option<Statement> {
-        let next_statement_index = self.running_statement.map(|s| s.index + 1).unwrap_or(0);
+        let running_statement = self.running_statement.take();
+        let next_statement_index = running_statement.map(|s| s.index + 1).unwrap_or(0);
         let next_statement = self.statements().get(next_statement_index).copied();
         if next_statement.is_none() {
-            self.complete(clock);
+            if let Some(running_statement) = running_statement {
+                self.complete(clock + self.statements()[running_statement.index].duration());
+            } else {
+                self.complete(clock);
+            }
+        } else {
+            self.running_statement = Some(RunningStatement::new(next_statement_index));
         }
         next_statement
     }
@@ -137,9 +144,38 @@ impl Process {
     }
     /// Time Difference between turn around time and burst time.
     pub fn waiting_time(&self) -> u64 {
-        self.turn_around_time() - self.burst_time
+        self.turn_around_time().saturating_sub(self.burst_time)
     }
     pub fn statements(&self) -> &Vec<Statement> {
         self.job.statements.as_ref()
+    }
+    pub fn table_header() -> prettytable::Row {
+        row![
+            Fg =>
+            "PId",
+            "Job Type",
+            "Total Duration",
+            "Total I/O Duration",
+            "Arrival",
+            "Completion",
+            "Burst",
+            "Waiting",
+            "Turn Around",
+            "Weighted Turn Around"
+        ]
+    }
+    pub fn table_row(&self) -> prettytable::Row {
+        row![
+            self.id,
+            self.job.type_hint(),
+            self.job.total_duration,
+            self.job.total_io_duration,
+            self.arrival_time,
+            self.completion_time,
+            self.burst_time,
+            self.waiting_time(),
+            self.turn_around_time(),
+            self.weighted_turn_around_time()
+        ]
     }
 }

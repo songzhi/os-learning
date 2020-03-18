@@ -38,4 +38,11 @@ impl Job {
             is_io_bound: true,
         }
     }
+    pub fn type_hint(&self) -> &str {
+        if self.is_io_bound {
+            "I/O Bound"
+        } else {
+            "CPU Bound"
+        }
+    }
 }
