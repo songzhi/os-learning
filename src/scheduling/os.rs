@@ -1,5 +1,4 @@
-use std::cell::RefCell;
-use std::rc::Rc;
+use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use indexmap::IndexMap;
@@ -14,13 +13,15 @@ pub struct Os {
     processes: IndexMap<PId, Process>,
     pub(crate) waiting: HashedWheel<PId>,
     running_process_pid: Option<PId>,
-    scheduler: Rc<RefCell<dyn Scheduler>>,
+    scheduler: Arc<Mutex<Box<dyn Scheduler + Send>>>,
+    // thread-safe actually not needed
     completed_process_count: usize,
     context_switch_times: usize,
+    jobs_desc: String,
 }
 
 impl Os {
-    pub fn new(processes: IndexMap<PId, Process>, scheduler: Rc<RefCell<dyn Scheduler>>) -> Self {
+    pub fn new(processes: IndexMap<PId, Process>, scheduler: Box<dyn Scheduler + Send>, jobs_desc: impl Into<String>) -> Self {
         let mut waiting = HashedWheelBuilder::default()
             .with_tick_duration(Duration::from_millis(10))
             .build();
@@ -34,9 +35,10 @@ impl Os {
             processes,
             waiting,
             running_process_pid: None,
-            scheduler,
+            scheduler: Arc::new(Mutex::new(scheduler)),
             completed_process_count: 0,
             context_switch_times: 0,
+            jobs_desc: jobs_desc.into(),
         }
     }
     pub fn run(&mut self) {
@@ -48,7 +50,7 @@ impl Os {
         self.clock += TICK;
         self.waiting.tick();
         let scheduler = self.scheduler.clone();
-        let mut scheduler = scheduler.borrow_mut();
+        let mut scheduler = scheduler.lock().expect("lock failed");
         scheduler.on_tick(self);
     }
 
@@ -129,6 +131,6 @@ impl Os {
         )
     }
     pub fn desc(&self) -> String {
-        format!("Scheduler: {}", self.scheduler.borrow().desc())
+        format!("Job: {}  Scheduler: {}", self.jobs_desc, self.scheduler.lock().expect("lock failed").desc())
     }
 }

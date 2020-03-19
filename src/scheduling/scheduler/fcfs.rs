@@ -1,23 +1,25 @@
 use std::collections::VecDeque;
 
-use crate::scheduling::{
-    os::Os,
-    process::PId,
-    scheduler::Scheduler,
-};
+use crate::scheduling::{os::Os, process::PId, scheduler::Scheduler};
 
+/// Simplest scheduling algorithm that schedules according to arrival times of processes.
+/// First come first serve scheduling algorithm states that the process that requests the CPU first is allocated the CPU first.
+/// It is implemented by using the FIFO queue. When a process enters the ready queue,
+/// its PCB is linked onto the tail of the queue.
+/// When the CPU is free, it is allocated to the process at the head of the queue.
+/// The running process is then removed from the queue. FCFS is a non-preemptive scheduling algorithm.
 #[derive(Default, Clone)]
-pub struct FCFSScheduler {
-    ready_queue: VecDeque<PId>
+pub struct FirstComeFirstServeScheduler {
+    ready_queue: VecDeque<PId>,
 }
 
-impl FCFSScheduler {
+impl FirstComeFirstServeScheduler {
     pub fn new() -> Self {
         Self::default()
     }
 }
 
-impl Scheduler for FCFSScheduler {
+impl Scheduler for FirstComeFirstServeScheduler {
     fn on_process_ready(&mut self, _os: &mut Os, pid: usize) {
         self.ready_queue.push_back(pid);
     }
@@ -25,7 +27,6 @@ impl Scheduler for FCFSScheduler {
         let pid = self.ready_queue.pop_front();
         os.switch_process(pid);
     }
-
     fn desc(&self) -> &'static str {
         "First Come First Serve (FCFS)"
     }

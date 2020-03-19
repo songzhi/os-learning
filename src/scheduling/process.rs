@@ -140,7 +140,7 @@ impl Process {
     }
     /// turn around time divides burst time
     pub fn weighted_turn_around_time(&self) -> u64 {
-        self.turn_around_time() / self.burst_time
+        self.turn_around_time().checked_div(self.burst_time).unwrap_or(0)
     }
     /// Time Difference between turn around time and burst time.
     pub fn waiting_time(&self) -> u64 {

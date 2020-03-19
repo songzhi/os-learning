@@ -5,6 +5,8 @@ use super::process::PId;
 use super::statement::Statement;
 
 pub mod fcfs;
+pub mod sjf;
+pub mod ljf;
 
 pub trait Scheduler {
     fn on_process_ready(&mut self, os: &mut Os, pid: PId);
@@ -23,12 +25,13 @@ pub trait Scheduler {
             .running_process()
             .map(|process| (process.burst(clock), process.is_completed(), process.id))
         {
+            self.on_process_burst(os, pid);
             if let Some(new_statement) = new_statement {
                 log::trace!(
-                    "Clock[{}]: New Statement::{:?} in Process[{}]",
+                    "Clock[{}]: Process[{}] New Statement::{:?}",
                     clock,
+                    pid,
                     new_statement,
-                    pid
                 );
                 self.run_statement(os, new_statement);
             } else if is_completed {
@@ -40,6 +43,7 @@ pub trait Scheduler {
             self.switch_process(os);
         }
     }
+    /// Run New Statement
     fn run_statement(&mut self, os: &mut Os, statement: Statement) {
         match statement {
             Statement::CpuBound(duration) => self.run_cpu_bound_statement(os, duration),
@@ -64,4 +68,6 @@ pub trait Scheduler {
         }
         self.switch_process(os);
     }
+    /// DON'T Let Process be Ready in This!!!
+    fn on_process_burst(&mut self, _os: &mut Os, _pid: PId) {}
 }
