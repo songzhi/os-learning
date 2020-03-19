@@ -13,8 +13,8 @@ pub struct Os {
     processes: IndexMap<PId, Process>,
     pub(crate) waiting: HashedWheel<PId>,
     running_process_pid: Option<PId>,
-    scheduler: Arc<Mutex<Box<dyn Scheduler + Send>>>,
     // thread-safe actually not needed
+    scheduler: Arc<Mutex<Box<dyn Scheduler + Send>>>,
     completed_process_count: usize,
     context_switch_times: usize,
     jobs_desc: String,
@@ -23,7 +23,8 @@ pub struct Os {
 impl Os {
     pub fn new(processes: IndexMap<PId, Process>, scheduler: Box<dyn Scheduler + Send>, jobs_desc: impl Into<String>) -> Self {
         let mut waiting = HashedWheelBuilder::default()
-            .with_tick_duration(Duration::from_millis(10))
+            .with_tick_duration(Duration::from_millis(TICK))
+            .with_max_timeout(Duration::from_secs(1000))
             .build();
         for p in processes.values() {
             waiting
@@ -121,12 +122,14 @@ impl Os {
                 "Ave Turn Around",
                 "Ave Weighted Turn Around",
                 "CPU Usage",
+                "Context Switches"
             ],
             [
                 average_waiting_time,
                 average_turn_around_time,
                 average_weighted_turn_around_time,
-                format!("{}%", cpu_usage)
+                format!("{}%", cpu_usage),
+                self.context_switch_times
             ]
         )
     }

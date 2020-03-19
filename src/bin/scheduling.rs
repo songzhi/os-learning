@@ -55,9 +55,9 @@ fn print_os_stats(os: &Os, is_detailed: bool) {
 fn main() {
     pretty_env_logger::init();
     let mut os_list: Vec<Os> = vec![];
-    let cpu_bound_test = std::thread::spawn(move || run_jobs(8, 2, "CPU Bound"));
-    let io_bound_test = std::thread::spawn(move || run_jobs(8, 2, "I/O Bound"));
-    let average_test = std::thread::spawn(move || run_jobs(8, 2, "Average"));
+    let cpu_bound_test = std::thread::spawn(move || run_jobs(80, 20, "CPU Bound"));
+    let io_bound_test = std::thread::spawn(move || run_jobs(80, 20, "I/O Bound"));
+    let average_test = std::thread::spawn(move || run_jobs(80, 20, "Average"));
     os_list.extend(cpu_bound_test.join().expect("cpu bound test failed"));
     os_list.extend(io_bound_test.join().expect("io bound test failed"));
     os_list.extend(average_test.join().expect("average test failed"));
