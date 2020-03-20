@@ -1,3 +1,4 @@
+//! Longest Job First
 use priority_queue::PriorityQueue;
 
 use crate::scheduling::{os::Os, process::PId, scheduler::Scheduler, TICK};

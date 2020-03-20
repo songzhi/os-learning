@@ -1,3 +1,4 @@
+//! Shortest Job First
 use std::cmp::Reverse;
 
 use priority_queue::PriorityQueue;

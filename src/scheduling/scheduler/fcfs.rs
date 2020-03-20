@@ -1,3 +1,4 @@
+//! First Come First Serve
 use std::collections::VecDeque;
 
 use crate::scheduling::{Os, PId, Scheduler};

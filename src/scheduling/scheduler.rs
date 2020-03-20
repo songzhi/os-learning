@@ -1,18 +1,26 @@
 use pendulum::Pendulum;
 
 pub use fcfs::FirstComeFirstServeScheduler;
+pub use hrrn::HighestResponseRatioNextScheduler;
 pub use ljf::LongestJobFirstScheduler;
+pub use lrjf::LongestRemaingJobFirstScheduler;
+pub use mfq::MultilevelFeedbackQueueScheduler;
+pub use mq::MultilevelQueueScheduler;
 pub use rr::RoundRobinScheduler;
 pub use sjf::ShortestJobFirstScheduler;
+pub use srjf::ShortestRemainingJobFirstScheduler;
 
-use super::os::Os;
-use super::process::PId;
-use super::statement::Statement;
+use super::{Os, PId, statement::Statement};
 
 mod fcfs;
-mod sjf;
+mod hrrn;
 mod ljf;
+mod lrjf;
+mod mfq;
+mod mq;
 mod rr;
+mod sjf;
+mod srjf;
 
 pub trait Scheduler {
     fn on_process_ready(&mut self, os: &mut Os, pid: PId);
