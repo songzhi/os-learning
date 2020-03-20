@@ -32,7 +32,7 @@ impl Scheduler for ShortestJobFirstScheduler {
     }
 
     fn desc(&self) -> &'static str {
-        "Shortest Job First (SJF)"
+        "Shortest Job First"
     }
 
     fn on_process_burst(&mut self, os: &mut Os, pid: PId) {

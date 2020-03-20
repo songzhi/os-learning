@@ -99,7 +99,19 @@ impl Os {
         }
         table
     }
-    pub fn totalled_process_stats(&self) -> prettytable::Table {
+    pub fn totalled_process_stats_titles() -> prettytable::Row {
+        row![
+                Fgb =>
+                "Job",
+                "Scheduler",
+                "Ave Waiting",
+                "Ave Turn Around",
+                "Ave Weighted Turn Around",
+                "CPU Usage",
+                "Context Switches"
+            ]
+    }
+    pub fn totalled_process_stats_row(&self) -> prettytable::Row {
         let mut waiting_time_sum = 0;
         let mut turn_around_time_sum = 0;
         let mut weighted_turn_around_time_sum = 0;
@@ -115,23 +127,31 @@ impl Os {
         let average_turn_around_time = turn_around_time_sum / process_count;
         let average_weighted_turn_around_time = weighted_turn_around_time_sum / process_count;
         let cpu_usage = burst_time_sum * 100 / self.clock;
-        table!(
-            [
-                Fg =>
-                "Ave Waiting",
-                "Ave Turn Around",
-                "Ave Weighted Turn Around",
-                "CPU Usage",
-                "Context Switches"
-            ],
-            [
-                average_waiting_time,
-                average_turn_around_time,
-                average_weighted_turn_around_time,
-                format!("{}%", cpu_usage),
-                self.context_switch_times
-            ]
-        )
+        row![
+            self.jobs_desc,
+            self.scheduler.lock().expect("lock failed").desc(),
+            average_waiting_time,
+            average_turn_around_time,
+            average_weighted_turn_around_time,
+            format!("{}%", cpu_usage),
+            self.context_switch_times
+        ]
+    }
+    pub fn totalled_process_stats(&self) -> prettytable::Table {
+        let mut table = prettytable::Table::new();
+        crate::utils::set_table_format(&mut table);
+        table.set_titles(Self::totalled_process_stats_titles());
+        table.add_row(self.totalled_process_stats_row());
+        table
+    }
+    pub fn os_list_totalled_process_stats(os_list: &[Os]) -> prettytable::Table {
+        let mut table = prettytable::Table::new();
+        crate::utils::set_table_format(&mut table);
+        table.set_titles(Self::totalled_process_stats_titles());
+        for os in os_list {
+            table.add_row(os.totalled_process_stats_row());
+        }
+        table
     }
     pub fn desc(&self) -> String {
         format!("Job: {}  Scheduler: {}", self.jobs_desc, self.scheduler.lock().expect("lock failed").desc())

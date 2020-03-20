@@ -1,12 +1,18 @@
 use pendulum::Pendulum;
 
+pub use fcfs::FirstComeFirstServeScheduler;
+pub use ljf::LongestJobFirstScheduler;
+pub use rr::RoundRobinScheduler;
+pub use sjf::ShortestJobFirstScheduler;
+
 use super::os::Os;
 use super::process::PId;
 use super::statement::Statement;
 
-pub mod fcfs;
-pub mod sjf;
-pub mod ljf;
+mod fcfs;
+mod sjf;
+mod ljf;
+mod rr;
 
 pub trait Scheduler {
     fn on_process_ready(&mut self, os: &mut Os, pid: PId);
@@ -68,6 +74,6 @@ pub trait Scheduler {
         }
         self.switch_process(os);
     }
-    /// DON'T Let Process be Ready in This!!!
+    /// BE CAREFUL!!!
     fn on_process_burst(&mut self, _os: &mut Os, _pid: PId) {}
 }

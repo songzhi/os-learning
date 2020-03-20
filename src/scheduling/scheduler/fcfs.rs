@@ -28,6 +28,6 @@ impl Scheduler for FirstComeFirstServeScheduler {
         os.switch_process(pid);
     }
     fn desc(&self) -> &'static str {
-        "First Come First Serve (FCFS)"
+        "First Come First Serve"
     }
 }

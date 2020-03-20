@@ -30,7 +30,7 @@ impl Scheduler for LongestJobFirstScheduler {
     }
 
     fn desc(&self) -> &'static str {
-        "Longest Job First (LJF)"
+        "Longest Job First"
     }
 
     fn on_process_burst(&mut self, os: &mut Os, pid: PId) {
