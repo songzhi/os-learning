@@ -3,7 +3,7 @@ use pendulum::Pendulum;
 pub use fcfs::FirstComeFirstServeScheduler;
 pub use hrrn::HighestResponseRatioNextScheduler;
 pub use ljf::LongestJobFirstScheduler;
-pub use lrjf::LongestRemaingJobFirstScheduler;
+pub use lrjf::LongestRemainingJobFirstScheduler;
 pub use mfq::MultilevelFeedbackQueueScheduler;
 pub use mq::MultilevelQueueScheduler;
 pub use rr::RoundRobinScheduler;

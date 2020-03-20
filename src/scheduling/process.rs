@@ -146,6 +146,10 @@ impl Process {
     pub fn waiting_time(&self) -> u64 {
         self.turn_around_time().saturating_sub(self.burst_time)
     }
+    /// Time Difference between total cpu time and burst time.
+    pub fn remaining_time(&self) -> u64 {
+        self.job.total_cpu_duration.saturating_sub(self.burst_time)
+    }
     pub fn statements(&self) -> &Vec<Statement> {
         self.job.statements.as_ref()
     }
