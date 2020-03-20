@@ -1,6 +1,6 @@
 use std::collections::{HashMap, VecDeque};
 
-use crate::scheduling::{os::Os, process::PId, scheduler::Scheduler, TICK};
+use crate::scheduling::{Os, PId, Scheduler, TICK};
 
 /// Each process is assigned a fixed time(Time Quantum/Time Slice) in cyclic way.
 /// It is designed especially for the time-sharing system.

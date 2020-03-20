@@ -1,9 +1,7 @@
 use std::sync::Arc;
 
+use crate::scheduling::{Job, TICK};
 use crate::scheduling::statement::Statement;
-
-use super::job::Job;
-use super::TICK;
 
 pub type PId = usize;
 
@@ -140,7 +138,9 @@ impl Process {
     }
     /// turn around time divides burst time
     pub fn weighted_turn_around_time(&self) -> u64 {
-        self.turn_around_time().checked_div(self.burst_time).unwrap_or(0)
+        self.turn_around_time()
+            .checked_div(self.burst_time)
+            .unwrap_or(0)
     }
     /// Time Difference between turn around time and burst time.
     pub fn waiting_time(&self) -> u64 {
@@ -151,7 +151,7 @@ impl Process {
     }
     pub fn table_header() -> prettytable::Row {
         row![
-            Fg =>
+            Fgb =>
             "PId",
             "Job Type",
             "Total Duration",

@@ -1,6 +1,6 @@
 use std::collections::VecDeque;
 
-use crate::scheduling::{os::Os, process::PId, scheduler::Scheduler};
+use crate::scheduling::{Os, PId, Scheduler};
 
 /// Simplest scheduling algorithm that schedules according to arrival times of processes.
 /// First come first serve scheduling algorithm states that the process that requests the CPU first is allocated the CPU first.

@@ -4,9 +4,7 @@ use std::time::Duration;
 use indexmap::IndexMap;
 use pendulum::{HashedWheel, HashedWheelBuilder, Pendulum};
 
-use super::process::{PId, Process};
-use super::scheduler::Scheduler;
-use super::TICK;
+use crate::scheduling::{PId, Process, Scheduler, TICK};
 
 pub struct Os {
     pub(crate) clock: u64,
@@ -21,7 +19,11 @@ pub struct Os {
 }
 
 impl Os {
-    pub fn new(processes: IndexMap<PId, Process>, scheduler: Box<dyn Scheduler + Send>, jobs_desc: impl Into<String>) -> Self {
+    pub fn new(
+        processes: IndexMap<PId, Process>,
+        scheduler: Box<dyn Scheduler + Send>,
+        jobs_desc: impl Into<String>,
+    ) -> Self {
         let mut waiting = HashedWheelBuilder::default()
             .with_tick_duration(Duration::from_millis(TICK))
             .with_max_timeout(Duration::from_secs(1000))
@@ -101,15 +103,15 @@ impl Os {
     }
     pub fn totalled_process_stats_titles() -> prettytable::Row {
         row![
-                Fgb =>
-                "Job",
-                "Scheduler",
-                "Ave Waiting",
-                "Ave Turn Around",
-                "Ave Weighted Turn Around",
-                "CPU Usage",
-                "Context Switches"
-            ]
+            Fgb =>
+            "Job",
+            "Scheduler",
+            "Ave Waiting",
+            "Ave Turn Around",
+            "Ave Weighted Turn Around",
+            "CPU Usage",
+            "Context Switches"
+        ]
     }
     pub fn totalled_process_stats_row(&self) -> prettytable::Row {
         let mut waiting_time_sum = 0;
@@ -154,6 +156,10 @@ impl Os {
         table
     }
     pub fn desc(&self) -> String {
-        format!("Job: {}  Scheduler: {}", self.jobs_desc, self.scheduler.lock().expect("lock failed").desc())
+        format!(
+            "Job: {}  Scheduler: {}",
+            self.jobs_desc,
+            self.scheduler.lock().expect("lock failed").desc()
+        )
     }
 }
