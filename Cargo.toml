@@ -13,4 +13,4 @@ pendulum = "0.3"
 log = "0.4"
 pretty_env_logger = "0.4"
 prettytable-rs = "0.8"
-priority-queue = "0.7"
+keyed_priority_queue = {git="https://github.com/AngelicosPhosphoros/keyed_priority_queue.git"}

@@ -1,14 +1,16 @@
 //! Longest Job First
-use priority_queue::PriorityQueue;
+//!
+use keyed_priority_queue::KeyedPriorityQueue;
 
 use crate::scheduling::{Os, PId, Scheduler};
 
-/// Process which have the shortest burst time are scheduled first.
-/// If two processes have the same bust time then FCFS is used to break the tie.
-/// It is a non-preemptive scheduling algorithm.
+/// It is similar to SJF scheduling algorithm.
+/// But, in this scheduling algorithm, we give priority to the process having the longest burst time.
+/// This is non-preemptive in nature i.e., when any process starts executing,
+/// can’t be interrupted before complete execution.
 #[derive(Default, Clone)]
 pub struct LongestJobFirstScheduler {
-    ready_queue: PriorityQueue<PId, u64>,
+    ready_queue: KeyedPriorityQueue<PId, u64>,
 }
 
 impl LongestJobFirstScheduler {
@@ -34,9 +36,4 @@ impl Scheduler for LongestJobFirstScheduler {
         "Longest Job First"
     }
 
-    fn on_process_burst(&mut self, os: &mut Os, pid: PId) {
-        let burst_time = os.get_process(pid).map(|p| p.burst_time()).unwrap_or(0);
-        self.ready_queue
-            .change_priority(&pid, burst_time);
-    }
 }

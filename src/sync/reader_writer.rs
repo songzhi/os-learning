@@ -222,9 +222,7 @@ pub mod writer_first {
 pub mod limited_readers {
     use std::cell::UnsafeCell;
     use std::ops::{Deref, DerefMut};
-    use std::sync::{
-        Mutex, MutexGuard,
-    };
+    use std::sync::{Mutex, MutexGuard};
 
     use crate::sync::semaphore::Semaphore;
 

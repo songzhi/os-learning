@@ -1,16 +1,15 @@
 //! Shortest Remaining Job First
+//!
 use std::cmp::Reverse;
 
-use priority_queue::PriorityQueue;
+use keyed_priority_queue::KeyedPriorityQueue;
 
 use crate::scheduling::{Os, PId, Scheduler};
 
-/// Process which have the shortest burst time are scheduled first.
-/// If two processes have the same bust time then FCFS is used to break the tie.
-/// It is a non-preemptive scheduling algorithm.
+/// It is preemptive mode of SJF algorithm in which jobs are schedule according to shortest remaining time.
 #[derive(Default, Clone)]
 pub struct ShortestRemainingJobFirstScheduler {
-    ready_queue: PriorityQueue<PId, Reverse<u64>>,
+    ready_queue: KeyedPriorityQueue<PId, Reverse<u64>>,
 }
 
 impl ShortestRemainingJobFirstScheduler {
@@ -22,7 +21,8 @@ impl ShortestRemainingJobFirstScheduler {
 impl Scheduler for ShortestRemainingJobFirstScheduler {
     fn on_process_ready(&mut self, os: &mut Os, pid: usize) {
         if let Some(process) = os.get_process(pid) {
-            self.ready_queue.push(pid, Reverse(process.remaining_time()));
+            self.ready_queue
+                .push(pid, Reverse(process.remaining_time()));
         }
     }
 
@@ -36,8 +36,16 @@ impl Scheduler for ShortestRemainingJobFirstScheduler {
     }
 
     fn on_process_burst(&mut self, os: &mut Os, pid: PId) {
-        let remaining_time = os.get_process(pid).map(|p| p.remaining_time()).unwrap_or(0);
-        self.ready_queue
-            .change_priority(&pid, Reverse(remaining_time));
+        let process_remaining_time = os.get_process(pid).map(|p| p.remaining_time()).unwrap_or(0);
+        if self
+            .ready_queue
+            .peek()
+            .map_or(false, |(_, top_remaining_time)| {
+                top_remaining_time.gt(&&Reverse(process_remaining_time))
+            })
+        {
+            self.switch_process(os);
+            self.ready_queue.push(pid, Reverse(process_remaining_time));
+        }
     }
 }

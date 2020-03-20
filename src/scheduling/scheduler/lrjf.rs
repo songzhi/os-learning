@@ -1,16 +1,13 @@
-//! Shortest Remaining Job First
-
-
-use priority_queue::PriorityQueue;
+//! Longest Remaining Job First
+//!
+use keyed_priority_queue::KeyedPriorityQueue;
 
 use crate::scheduling::{Os, PId, Scheduler};
 
-/// Process which have the shortest burst time are scheduled first.
-/// If two processes have the same bust time then FCFS is used to break the tie.
-/// It is a non-preemptive scheduling algorithm.
+/// It is preemptive mode of LJF algorithm in which we give priority to the process having largest burst time remaining.
 #[derive(Default, Clone)]
 pub struct LongestRemainingJobFirstScheduler {
-    ready_queue: PriorityQueue<PId, u64>,
+    ready_queue: KeyedPriorityQueue<PId, u64>,
 }
 
 impl LongestRemainingJobFirstScheduler {
@@ -36,8 +33,14 @@ impl Scheduler for LongestRemainingJobFirstScheduler {
     }
 
     fn on_process_burst(&mut self, os: &mut Os, pid: PId) {
-        let remaining_time = os.get_process(pid).map(|p| p.remaining_time()).unwrap_or(0);
-        self.ready_queue
-            .change_priority(&pid, remaining_time);
+        let current_remaining_time = os.get_process(pid).map(|p| p.remaining_time()).unwrap_or(0);
+        if self
+            .ready_queue
+            .peek()
+            .map_or(false, |(_, remaining_time)| remaining_time.gt(&current_remaining_time))
+        {
+            self.switch_process(os);
+            self.ready_queue.push(pid, current_remaining_time);
+        }
     }
 }

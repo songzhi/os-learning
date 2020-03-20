@@ -85,14 +85,24 @@ impl Os {
         self.completed_process_count == self.processes.len()
     }
     pub fn switch_process(&mut self, pid: Option<PId>) {
+        if self.running_process_pid == pid {
+            return;
+        }
         if let Some(pid) = pid {
             log::trace!("Clock[{}]: Switch to Process[{}]", self.clock, pid);
-            self.context_switch_times += 1;
         } else {
             log::trace!("Clock[{}]: Idle", self.clock);
         }
+        self.context_switch_times += 1;
         self.running_process_pid = pid;
     }
+    pub fn is_process_running(&self, pid: PId) -> bool {
+        self.running_process_pid
+            .map_or(false, |running_pid| running_pid == pid)
+    }
+}
+
+impl Os {
     pub fn raw_process_stats(&self) -> prettytable::Table {
         let mut table = prettytable::Table::new();
         table.add_row(Process::table_header());

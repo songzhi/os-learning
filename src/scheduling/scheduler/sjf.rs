@@ -1,7 +1,7 @@
 //! Shortest Job First
 use std::cmp::Reverse;
 
-use priority_queue::PriorityQueue;
+use keyed_priority_queue::KeyedPriorityQueue;
 
 use crate::scheduling::{Os, PId, Scheduler};
 
@@ -10,7 +10,7 @@ use crate::scheduling::{Os, PId, Scheduler};
 /// It is a non-preemptive scheduling algorithm.
 #[derive(Default, Clone)]
 pub struct ShortestJobFirstScheduler {
-    ready_queue: PriorityQueue<PId, Reverse<u64>>,
+    ready_queue: KeyedPriorityQueue<PId, Reverse<u64>>,
 }
 
 impl ShortestJobFirstScheduler {
@@ -36,9 +36,4 @@ impl Scheduler for ShortestJobFirstScheduler {
         "Shortest Job First"
     }
 
-    fn on_process_burst(&mut self, os: &mut Os, pid: PId) {
-        let burst_time = os.get_process(pid).map(|p| p.burst_time()).unwrap_or(0);
-        self.ready_queue
-            .change_priority(&pid, Reverse(burst_time));
-    }
 }
