@@ -2,7 +2,11 @@ use std::sync::Arc;
 
 use rand::seq::SliceRandom;
 
-use os_learning::scheduling::{FirstComeFirstServeScheduler, HighestResponseRatioNextScheduler, Job, LongestJobFirstScheduler, LongestRemainingJobFirstScheduler, MultilevelFeedbackQueueScheduler, Os, PId, Process, RoundRobinScheduler, Scheduler, ShortestJobFirstScheduler, ShortestRemainingJobFirstScheduler};
+use os_learning::scheduling::{
+    FirstComeFirstServeScheduler, HighestResponseRatioNextScheduler, Job, LongestJobFirstScheduler,
+    MultilevelFeedbackQueueScheduler, Os, PId, Process, RoundRobinScheduler, Scheduler,
+    ShortestJobFirstScheduler, ShortestRemainingJobFirstScheduler,
+};
 
 fn run_jobs(cpu_bound_jobs: usize, io_bound_jobs: usize, jobs_desc: &'static str) -> Vec<Os> {
     let mut processes = (0..cpu_bound_jobs)
@@ -36,7 +40,7 @@ fn get_schedulers() -> Vec<Box<dyn Scheduler + Send>> {
         Box::new(ShortestJobFirstScheduler::new()),
         Box::new(ShortestRemainingJobFirstScheduler::new()),
         Box::new(LongestJobFirstScheduler::new()),
-        Box::new(LongestRemainingJobFirstScheduler::new()),
+        // Box::new(LongestRemainingJobFirstScheduler::new()),
         Box::new(FirstComeFirstServeScheduler::new()),
         Box::new(RoundRobinScheduler::new(100)),
         Box::new(MultilevelFeedbackQueueScheduler::new([50, 100])),
@@ -46,11 +50,11 @@ fn get_schedulers() -> Vec<Box<dyn Scheduler + Send>> {
 fn print_os_list_stats(os_list: &[Os], is_detailed: bool) {
     if is_detailed {
         for os in os_list {
-            os.totalled_process_stats().printstd();
-            os.raw_process_stats().printstd();
+            os.stats_table().printstd();
+            os.detailed_process_stats_table().printstd();
         }
     } else {
-        Os::os_list_totalled_process_stats(os_list).printstd();
+        Os::os_list_stats_table(os_list).printstd();
     }
 }
 
@@ -59,7 +63,22 @@ fn main() {
     let cpu_bound_test = std::thread::spawn(move || run_jobs(8, 2, "CPU Bound"));
     let io_bound_test = std::thread::spawn(move || run_jobs(2, 8, "I/O Bound"));
     let average_test = std::thread::spawn(move || run_jobs(5, 5, "Average"));
-    print_os_list_stats(cpu_bound_test.join().expect("cpu bound test failed").as_slice(), false);
-    print_os_list_stats(io_bound_test.join().expect("io bound test failed").as_slice(), false);
-    print_os_list_stats(average_test.join().expect("average test failed").as_slice(), false);
+    print_os_list_stats(
+        cpu_bound_test
+            .join()
+            .expect("cpu bound test failed")
+            .as_slice(),
+        false,
+    );
+    print_os_list_stats(
+        io_bound_test
+            .join()
+            .expect("io bound test failed")
+            .as_slice(),
+        false,
+    );
+    print_os_list_stats(
+        average_test.join().expect("average test failed").as_slice(),
+        false,
+    );
 }
