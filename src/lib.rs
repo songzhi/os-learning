@@ -1,3 +1,4 @@
+#![feature(bool_to_option)]
 #[macro_use]
 extern crate prettytable;
 

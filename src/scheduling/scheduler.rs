@@ -22,6 +22,7 @@ mod srjf;
 
 pub trait Scheduler {
     fn on_process_ready(&mut self, os: &mut Os, pid: PId);
+    /// FORCED TO SWITCH!!!
     fn switch_process(&mut self, os: &mut Os);
     fn desc(&self) -> &'static str;
     fn on_tick(&mut self, os: &mut Os) {
@@ -46,7 +47,6 @@ pub trait Scheduler {
                 );
                 self.run_statement(os, new_statement, pid);
             } else if is_completed {
-                log::trace!("Clock[{}]: Process[{}] Completed", clock, pid);
                 os.complete_process(pid);
                 if os.is_process_running(pid) {
                     self.switch_process(os);

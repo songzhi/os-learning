@@ -69,7 +69,7 @@ impl Os {
     }
     pub fn await_process(&mut self, pid: PId, timeout: u64) {
         log::trace!(
-            "Clock[{}]: Await Process[{}] with Timeout[{}]",
+            "Clock[{}]: Process[{}] was Awaited with Timeout[{}]",
             self.clock,
             pid,
             timeout
@@ -80,6 +80,10 @@ impl Os {
     }
     #[allow(unused)]
     pub fn complete_process(&mut self, pid: PId) {
+        if self.get_process(pid).is_none() {
+            return;
+        }
+        log::trace!("Clock[{}]: Process[{}] Completed", self.get_process(pid).unwrap().completion_time(), pid);
         self.completed_process_count += 1;
         if self.is_completed() {
             self.clock = self.processes.values().map(|p| p.completion_time()).max().unwrap_or(self.clock);
@@ -93,7 +97,7 @@ impl Os {
             return;
         }
         if let Some(pid) = pid {
-            log::trace!("Clock[{}]: Switch to Process[{}]", self.clock, pid);
+            log::trace!("Clock[{}]: Process[{}] was Switched to Run", self.clock, pid);
         } else {
             log::trace!("Clock[{}]: Idle", self.clock);
         }
@@ -123,7 +127,7 @@ impl Os {
             "Scheduler",
             "Ave Waiting",
             "Ave Turn Around",
-            "Ave Weighted Turn Around",
+            "Ave Wtd Turn Around",
             "CPU Usage",
             "Context Switches"
         ]
@@ -146,7 +150,7 @@ impl Os {
         let cpu_usage = burst_time_sum * 100 / self.clock;
         row![
             self.jobs_desc,
-            self.scheduler.lock().expect("lock failed").desc(),
+            r->self.scheduler.lock().expect("lock failed").desc(),
             average_waiting_time,
             average_turn_around_time,
             average_weighted_turn_around_time,

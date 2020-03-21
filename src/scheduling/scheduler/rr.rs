@@ -46,7 +46,7 @@ impl Scheduler for RoundRobinScheduler {
     }
 
     fn desc(&self) -> &'static str {
-        "Round Robin"
+        "Round Robin; Preemptive; for Job or Process"
     }
 
     fn on_process_burst(&mut self, os: &mut Os, pid: PId) {

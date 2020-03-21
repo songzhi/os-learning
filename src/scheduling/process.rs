@@ -53,10 +53,6 @@ impl Process {
         }
         self.completion_time = completion_time - TICK; // error-fixing
         debug_assert!(self.burst_time() >= self.job.total_cpu_duration);
-        // if self.turn_around_time()<self.job.total_duration {
-        //     println!("{}", self.is_io_bound());
-        //     println!("{} {}", self.turn_around_time(),self.job.total_duration);
-        // }
         debug_assert!(self.turn_around_time() >= self.job.total_duration);
         self.running_statement.take();
     }
@@ -159,7 +155,7 @@ impl Process {
     pub fn remaining_time(&self) -> u64 {
         self.job.total_cpu_duration.saturating_sub(self.burst_time)
     }
-    pub fn statements(&self) -> &Vec<Statement> {
+    pub fn statements(&self) -> &[Statement] {
         self.job.statements.as_ref()
     }
     pub fn table_titles() -> prettytable::Row {

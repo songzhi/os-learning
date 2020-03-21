@@ -27,12 +27,11 @@ impl Scheduler for ShortestRemainingJobFirstScheduler {
     }
 
     fn switch_process(&mut self, os: &mut Os) {
-        let pid = self.ready_queue.pop().map(|(pid, _)| pid);
-        os.switch_process(pid);
+        os.switch_process(self.ready_queue.pop().map(|(pid, _)| pid));
     }
 
     fn desc(&self) -> &'static str {
-        "Shortest Remaining Job First"
+        "Shortest Remaining Job First; Preemptive; for Job"
     }
 
     fn on_process_burst(&mut self, os: &mut Os, pid: PId) {

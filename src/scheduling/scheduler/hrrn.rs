@@ -26,11 +26,10 @@ impl Scheduler for HighestResponseRatioNextScheduler {
     }
 
     fn switch_process(&mut self, os: &mut Os) {
-        let pid = self.ready_queue.pop().map(|(pid, _)| pid);
-        os.switch_process(pid);
+        os.switch_process(self.ready_queue.pop().map(|(pid, _)| pid));
     }
 
     fn desc(&self) -> &'static str {
-        "Highest Response Ratio Next"
+        "Highest Response Ratio Next; Non-Preemptive; for Job"
     }
 }

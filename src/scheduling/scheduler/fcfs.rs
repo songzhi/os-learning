@@ -25,10 +25,9 @@ impl Scheduler for FirstComeFirstServeScheduler {
         self.ready_queue.push_back(pid);
     }
     fn switch_process(&mut self, os: &mut Os) {
-        let pid = self.ready_queue.pop_front();
-        os.switch_process(pid);
+        os.switch_process(self.ready_queue.pop_front());
     }
     fn desc(&self) -> &'static str {
-        "First Come First Serve"
+        "First Come First Serve; Non-Preemptive; for Job or Process"
     }
 }
