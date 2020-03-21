@@ -2,11 +2,7 @@ use std::sync::Arc;
 
 use rand::seq::SliceRandom;
 
-use os_learning::scheduling::{
-    FirstComeFirstServeScheduler, Job, LongestJobFirstScheduler, LongestRemainingJobFirstScheduler,
-    Os, PId, Process, RoundRobinScheduler, Scheduler, ShortestJobFirstScheduler,
-    ShortestRemainingJobFirstScheduler,
-};
+use os_learning::scheduling::{FirstComeFirstServeScheduler, HighestResponseRatioNextScheduler, Job, LongestJobFirstScheduler, LongestRemainingJobFirstScheduler, Os, PId, Process, RoundRobinScheduler, Scheduler, ShortestJobFirstScheduler, ShortestRemainingJobFirstScheduler};
 
 fn run_jobs(cpu_bound_jobs: usize, io_bound_jobs: usize, jobs_desc: &'static str) -> Vec<Os> {
     let mut processes = (0..cpu_bound_jobs)
@@ -41,7 +37,8 @@ fn get_schedulers() -> Vec<Box<dyn Scheduler + Send>> {
         Box::new(ShortestRemainingJobFirstScheduler::new()),
         Box::new(LongestJobFirstScheduler::new()),
         Box::new(LongestRemainingJobFirstScheduler::new()),
-        Box::new(RoundRobinScheduler::new(100)),
+        Box::new(RoundRobinScheduler::new(50)),
+        Box::new(HighestResponseRatioNextScheduler::new()),
     ]
 }
 

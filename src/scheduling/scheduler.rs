@@ -4,8 +4,7 @@ pub use fcfs::FirstComeFirstServeScheduler;
 pub use hrrn::HighestResponseRatioNextScheduler;
 pub use ljf::LongestJobFirstScheduler;
 pub use lrjf::LongestRemainingJobFirstScheduler;
-pub use mfq::MultilevelFeedbackQueueScheduler;
-pub use mq::MultilevelQueueScheduler;
+pub use mlfq::MultilevelFeedbackQueueScheduler;
 pub use rr::RoundRobinScheduler;
 pub use sjf::ShortestJobFirstScheduler;
 pub use srjf::ShortestRemainingJobFirstScheduler;
@@ -16,8 +15,7 @@ mod fcfs;
 mod hrrn;
 mod ljf;
 mod lrjf;
-mod mfq;
-mod mq;
+mod mlfq;
 mod rr;
 mod sjf;
 mod srjf;
@@ -39,7 +37,6 @@ pub trait Scheduler {
             .running_process()
             .map(|process| (process.burst(clock), process.is_completed(), process.id))
         {
-            self.on_process_burst(os, pid);
             if let Some(new_statement) = new_statement {
                 log::trace!(
                     "Clock[{}]: Process[{}] New Statement::{:?}",
@@ -55,6 +52,7 @@ pub trait Scheduler {
                     self.switch_process(os);
                 }
             }
+            self.on_process_burst(os, pid);
         } else {
             self.switch_process(os);
         }
@@ -66,10 +64,11 @@ pub trait Scheduler {
             Statement::IoBound(duration) => self.run_io_bound_statement(os, duration, pid),
         }
     }
-    fn run_cpu_bound_statement(&mut self, _os: &mut Os, _duration: u64, _pid: PId) {}
+    #[allow(unused)]
+    fn run_cpu_bound_statement(&mut self, os: &mut Os, duration: u64, pid: PId) {}
     fn run_io_bound_statement(&mut self, os: &mut Os, duration: u64, pid: PId) {
         let clock = os.clock;
-        if let Some(pid) = os.get_mut_process(pid).map(|process| {
+        if let Some((pid, is_completed)) = os.get_mut_process(pid).map(|process| {
             if let Some(next_statement) = process.bump_to_next(clock) {
                 log::trace!(
                     "Clock[{}]: Process[{}] Bump to Next Statement::{:?}",
@@ -78,14 +77,20 @@ pub trait Scheduler {
                     next_statement
                 );
             }
-            process.id
+            (process.id, process.is_completed())
         }) {
-            os.await_process(pid, duration)
+            if is_completed {
+                os.complete_process(pid);
+            } else {
+                os.await_process(pid, duration);
+            }
         }
         if os.is_process_running(pid) {
             self.switch_process(os);
         }
     }
-    /// BE CAREFUL!!!
-    fn on_process_burst(&mut self, _os: &mut Os, _pid: PId) {}
+    /// Usually be Implemented by Preemptive Algorithms.
+    /// CHECK THE RUNNING PROCESS BEFORE SWITCH!!!
+    #[allow(unused)]
+    fn on_process_burst(&mut self, os: &mut Os, pid: PId) {}
 }

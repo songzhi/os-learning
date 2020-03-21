@@ -78,8 +78,12 @@ impl Os {
             .insert_timeout(Duration::from_millis(timeout), pid)
             .expect("timer error");
     }
-    pub fn complete_process(&mut self, _pid: PId) {
+    #[allow(unused)]
+    pub fn complete_process(&mut self, pid: PId) {
         self.completed_process_count += 1;
+        if self.is_completed() {
+            self.clock = self.processes.values().map(|p| p.completion_time()).max().unwrap_or(self.clock);
+        }
     }
     pub fn is_completed(&self) -> bool {
         self.completed_process_count == self.processes.len()
@@ -105,7 +109,8 @@ impl Os {
 impl Os {
     pub fn raw_process_stats(&self) -> prettytable::Table {
         let mut table = prettytable::Table::new();
-        table.add_row(Process::table_header());
+        table.set_titles(Process::table_titles());
+        crate::utils::set_table_format(&mut table);
         for p in self.processes.values() {
             table.add_row(p.table_row());
         }

@@ -51,7 +51,7 @@ impl Scheduler for RoundRobinScheduler {
 
     fn on_process_burst(&mut self, os: &mut Os, pid: PId) {
         let used_time_slice = self.used_time_slice_map.get(&pid).copied().unwrap_or(0);
-        if used_time_slice >= self.time_slice {
+        if used_time_slice >= self.time_slice && os.is_process_running(pid) {
             self.ready_queue.push_back(pid);
             self.used_time_slice_map.insert(pid, 0);
             self.switch_process(os);

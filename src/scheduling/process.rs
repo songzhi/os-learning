@@ -29,7 +29,7 @@ impl RunningStatement {
 #[derive(Debug, Clone)]
 pub struct Process {
     pub id: PId,
-    job: Arc<Job>,
+    pub job: Arc<Job>,
     arrival_time: u64,
     completion_time: u64,
     burst_time: u64,
@@ -48,7 +48,16 @@ impl Process {
         }
     }
     pub fn complete(&mut self, completion_time: u64) {
+        if self.is_completed() {
+            return;
+        }
         self.completion_time = completion_time - TICK; // error-fixing
+        debug_assert!(self.burst_time() >= self.job.total_cpu_duration);
+        // if self.turn_around_time()<self.job.total_duration {
+        //     println!("{}", self.is_io_bound());
+        //     println!("{} {}", self.turn_around_time(),self.job.total_duration);
+        // }
+        debug_assert!(self.turn_around_time() >= self.job.total_duration);
         self.running_statement.take();
     }
     /// returns: new running statement
@@ -153,7 +162,7 @@ impl Process {
     pub fn statements(&self) -> &Vec<Statement> {
         self.job.statements.as_ref()
     }
-    pub fn table_header() -> prettytable::Row {
+    pub fn table_titles() -> prettytable::Row {
         row![
             Fgb =>
             "PId",

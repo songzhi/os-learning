@@ -33,6 +33,9 @@ impl Scheduler for LongestRemainingJobFirstScheduler {
     }
 
     fn on_process_burst(&mut self, os: &mut Os, pid: PId) {
+        if !os.is_process_running(pid) {
+            return;
+        }
         let current_remaining_time = os.get_process(pid).map(|p| p.remaining_time()).unwrap_or(0);
         if self
             .ready_queue

@@ -45,4 +45,8 @@ impl Job {
             "CPU Bound"
         }
     }
+    /// `Response Ratio = (Waiting Time + Burst time) / Burst time`
+    pub fn response_ratio(&self) -> u64 {
+        self.total_duration.checked_div(self.total_cpu_duration).unwrap_or(1)
+    }
 }
