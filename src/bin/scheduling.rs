@@ -60,9 +60,9 @@ fn print_os_list_stats(os_list: &[Os], is_detailed: bool) {
 
 fn main() {
     pretty_env_logger::init();
-    let cpu_bound_test = std::thread::spawn(move || run_jobs(8, 2, "CPU Bound"));
-    let io_bound_test = std::thread::spawn(move || run_jobs(2, 8, "I/O Bound"));
-    let average_test = std::thread::spawn(move || run_jobs(5, 5, "Average"));
+    let cpu_bound_test = std::thread::spawn(|| run_jobs(8, 2, "CPU Bound"));
+    let io_bound_test = std::thread::spawn(|| run_jobs(2, 8, "I/O Bound"));
+    let average_test = std::thread::spawn(|| run_jobs(5, 5, "Average"));
     print_os_list_stats(
         cpu_bound_test
             .join()
