@@ -6,3 +6,5 @@ pub mod scheduling;
 pub mod sync;
 
 pub mod utils;
+pub mod allocation;
+pub mod swapping;

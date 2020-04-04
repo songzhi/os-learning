@@ -11,3 +11,5 @@ pub fn set_table_format(table: &mut prettytable::Table) {
             .build(),
     );
 }
+
+pub mod deque;
