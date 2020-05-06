@@ -1,5 +1,5 @@
-pub mod impls;
-
+pub mod swappers;
+pub mod frame;
 
 pub const SWAPPER_DEFAULT_CAPACITY: usize = 128;
 
