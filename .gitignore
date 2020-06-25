@@ -1,3 +1,5 @@
 /target
 Cargo.lock
 src/bin/nonsense.rs
+.idea
+.vscode

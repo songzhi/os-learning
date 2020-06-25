@@ -1,7 +1,5 @@
 use std::sync::Arc;
 
-use rand::seq::SliceRandom;
-
 use os_learning::scheduling::{
     FirstComeFirstServeScheduler, HighestResponseRatioNextScheduler, Job, LongestJobFirstScheduler,
     MultilevelFeedbackQueueScheduler, Os, PId, Process, RoundRobinScheduler, Scheduler,
@@ -13,10 +11,9 @@ fn run_jobs(cpu_bound_jobs: usize, io_bound_jobs: usize, jobs_desc: &'static str
         .map(|_| Arc::new(Job::cpu_bound(1000)))
         .chain((0..io_bound_jobs).map(|_| Arc::new(Job::io_bound(1000, 4))))
         .enumerate()
-        .map(|(id, job)| (id, Process::new(id, job, rand::random::<u8>() as u64 * 10)))
+        .map(|(id, job)| (id, Process::new(id, job, fastrand::u64(..2000))))
         .collect::<Vec<_>>();
-    let mut rng = rand::thread_rng();
-    processes.as_mut_slice().shuffle(&mut rng);
+    fastrand::shuffle(processes.as_mut_slice());
     let processes = processes
         .into_iter()
         .collect::<indexmap::IndexMap<PId, Process>>();
