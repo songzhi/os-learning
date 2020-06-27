@@ -11,15 +11,13 @@ fn numeric(input: &str) -> IResult<&str, &str> {
 }
 
 fn malloc(input: &str) -> IResult<&str, Statement> {
-    let malloc_ = tag("malloc");
-    let (i, (_, _, len)) = tuple((malloc_, space0, numeric))(input)?;
+    let (i, (_, _, len)) = tuple((tag("malloc"), space0, numeric))(input)?;
     // assuming `len` is non-negative
     Ok((i, Statement::Malloc(len.parse().unwrap())))
 }
 
 fn malloc_addr(input: &str) -> IResult<&str, Statement> {
-    let malloc = tag("malloc");
-    let (i, (_, _, addr, len)) = tuple((malloc, space0, numeric, numeric))(input)?;
+    let (i, (_, _, addr, len)) = tuple((tag("malloc"), space0, numeric, numeric))(input)?;
     Ok((
         i,
         Statement::MallocAddr(addr.parse().unwrap(), len.parse().unwrap()),
@@ -27,8 +25,7 @@ fn malloc_addr(input: &str) -> IResult<&str, Statement> {
 }
 
 fn free(input: &str) -> IResult<&str, Statement> {
-    let free_ = tag("free");
-    let (i, (_, _, handle)) = tuple((free_, space0, numeric))(input)?;
+    let (i, (_, _, handle)) = tuple((tag("free"), space0, numeric))(input)?;
     Ok((i, Statement::Free(handle.parse().unwrap())))
 }
 
