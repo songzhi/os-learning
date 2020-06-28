@@ -1,7 +1,9 @@
+use std::cmp::Ordering;
 use std::ops::Sub;
 
 use intrusive_collections::{LinkedList, LinkedListLink};
 use intrusive_collections::intrusive_adapter;
+use itertools::Itertools;
 
 pub use parser::parse;
 
@@ -17,11 +19,27 @@ pub enum Command {
     NStep(usize, Direction, usize),
 }
 
+#[derive(Copy, Clone, Debug)]
 pub enum Direction {
     /// to smaller end
     Left,
     /// to bigger end
     Right,
+}
+
+impl Direction {
+    fn opposite(&self) -> Self {
+        match self {
+            Direction::Left => Direction::Right,
+            Direction::Right => Direction::Left,
+        }
+    }
+    fn is_left(&self) -> bool {
+        matches!(self, Direction::Left)
+    }
+    fn is_right(&self) -> bool {
+        matches!(self, Direction::Right)
+    }
 }
 
 struct Request {
@@ -70,15 +88,15 @@ impl Scheduler {
     }
 
     fn fcfs(&self, curr: usize) {
-        let (count, _) = self
+        let (sum, _) = self
             .requests
             .iter()
-            .fold((0, curr), |(count, curr), &destination| {
-                (count + distance(curr, destination), destination)
+            .fold((0, curr), |(sum, curr), &destination| {
+                (sum + distance(curr, destination), destination)
             });
-        println!("fcfs: {}", count);
+        println!("fcfs: {}", sum);
     }
-    fn sstf(&self, curr: usize, mut direction: Direction) {
+    fn sstf(&self, mut curr: usize, mut direction: Direction) {
         let mut sorted = self.requests.clone();
         sorted.sort();
         let mut requests = LinkedList::new(RequestAdapter::new());
@@ -92,15 +110,105 @@ impl Scheduler {
             }
             cursor.move_prev();
         }
-        todo!()
+        let mut sum = 0;
+        while cursor.is_null() && cursor.peek_next().is_null() && cursor.peek_prev().is_null() {
+            let left_gap: usize = cursor
+                .get()
+                .map(|request| curr - request.track)
+                .unwrap_or(usize::MAX);
+            let right_gap: usize = cursor
+                .peek_next()
+                .get()
+                .map(|request| curr - request.track)
+                .unwrap_or(usize::MAX);
+            match left_gap.cmp(&right_gap) {
+                Ordering::Less => direction = Direction::Left,
+                Ordering::Equal => {}
+                Ordering::Greater => direction = Direction::Right,
+            }
+            if direction.is_left() {
+                curr = cursor.remove().unwrap().track;
+                cursor.move_prev();
+                sum += left_gap;
+            } else {
+                cursor.move_next();
+                curr = cursor.remove().unwrap().track;
+                cursor.move_prev();
+                sum += right_gap;
+            }
+        }
+        println!("sstf: {}", sum);
     }
     fn scan(&self, curr: usize, direction: Direction) {
-        todo!()
+        let mut min_track = usize::MAX;
+        let mut max_track = usize::MIN;
+        for &request in self.requests.iter() {
+            if request < min_track {
+                min_track = request;
+            }
+            if request > max_track {
+                max_track = request;
+            }
+        }
+        let sum = if curr <= min_track {
+            max_track - curr
+        } else if curr >= max_track {
+            curr - min_track
+        } else if direction.is_left() {
+            (curr - min_track) + (max_track - min_track)
+        } else {
+            (max_track - curr) + (max_track - min_track)
+        };
+        println!("scan: {}", sum);
     }
     fn cscan(&self, curr: usize) {
-        todo!()
+        let mut min_track = usize::MAX;
+        let mut max_track = usize::MIN;
+        for &request in self.requests.iter() {
+            if request < min_track {
+                min_track = request;
+            }
+            if request > max_track {
+                max_track = request;
+            }
+        }
+        let sum = max_track - curr + max_track + min_track;
+        println!("cscan: {}", sum);
     }
-    fn nstep(&self, curr: usize, direction: Direction, gsize: usize) {
-        todo!()
+    fn nstep(&self, mut curr: usize, mut direction: Direction, gsize: usize) {
+        fn scan(
+            requests: impl Iterator<Item=usize>,
+            curr: usize,
+            direction: Direction,
+        ) -> (usize, Direction, usize) {
+            let mut min_track = usize::MAX;
+            let mut max_track = usize::MIN;
+            for request in requests {
+                if request < min_track {
+                    min_track = request;
+                }
+                if request > max_track {
+                    max_track = request;
+                }
+            }
+            let sum = if curr <= min_track {
+                max_track - curr
+            } else if curr >= max_track {
+                curr - min_track
+            } else if direction.is_left() {
+                (curr - min_track) + (max_track - min_track)
+            } else {
+                (max_track - curr) + (max_track - min_track)
+            };
+            (curr, direction, sum)
+        }
+        let mut sum = 0;
+        for requests in &self.requests.clone().into_iter().chunks(gsize) {
+            let (curr_, direction_, sum_) = scan(requests, curr, direction);
+            curr = curr_;
+            direction = direction_;
+            sum += sum_;
+        }
+        println!("nstep: {}", sum);
     }
 }
